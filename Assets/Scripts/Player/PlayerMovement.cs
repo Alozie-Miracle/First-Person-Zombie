@@ -1,9 +1,12 @@
+using System.Collections;
+using NUnit.Framework;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInputHandler))]
 public class PlayerMovement : MonoBehaviour
 {
+    [Header("Player Movement")]
     [SerializeField] private float walkSpeed = 5f;
     [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float gravity = -9.81f;
@@ -14,6 +17,15 @@ public class PlayerMovement : MonoBehaviour
     private Vector3 velocity;
     private bool isGrounded;
 
+    [Header("Player Footstep Settings")]
+    public AudioSource footSound;
+    public AudioClip[] footstepClips; // Array of footstep clips for variety
+    
+    [SerializeField] private float walkStepInterval = 0.5f;   // Seconds between walk steps
+    [SerializeField] private float sprintStepInterval = 0.3f; // Seconds between sprint steps
+    
+    private bool isStepping = false;
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
@@ -23,42 +35,86 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         GroundedCheck();
-
         HandleMovement();
-
+        HandleJump();
+        HandleGravity();
+        HandleFootStepState();
     }
 
-    private void GroundedCheck()
+    void GroundedCheck()
     {
-        // Ground Check
         isGrounded = controller.isGrounded;
         if (isGrounded && velocity.y < 0)
         {
-            velocity.y = -2f; // Keep grounded firmly
+            velocity.y = -2f;
         }
     }
 
-    private void HandleMovement()
+    void HandleMovement()
     {
-        // 1. USE MOVEINPUT TO CALCULATE DIRECTION
-        // moveInput.x = A/D (Right/Left), moveInput.y = W/S (Forward/Backward)
         Vector3 moveDirection = transform.right * input.moveInput.x + transform.forward * input.moveInput.y;
-
-        // Determine Speed (Sprint check)
         float currentSpeed = input.isSprinting ? sprintSpeed : walkSpeed;
-
-        // Apply Movement
         controller.Move(currentSpeed * Time.deltaTime * moveDirection);
+    }
 
-        // 2. JUMPING
+    void HandleJump()
+    {
         if (input.isJumping && isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            input.isJumping = false; // Reset jump flag after consuming
+            input.isJumping = false;
         }
+    }
 
-        // 3. APPLY GRAVITY
+    void HandleGravity()
+    {
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    // Controls starting and stopping the footstep coroutine smoothly
+    void HandleFootStepState()
+    {
+        
+        if (input.isMoving && isGrounded)
+        {
+            if (!isStepping)
+            {
+                isStepping = true;
+                StartCoroutine(FootstepRoutine());
+            }
+        }
+    }
+
+    // Coroutine loop that plays step sounds and dynamically handles walk vs sprint timing
+    IEnumerator FootstepRoutine()
+    {
+        PlayFootstepAudio();
+
+        float currentInterval = input.isSprinting ? sprintStepInterval : walkStepInterval;
+        yield return new WaitForSeconds(currentInterval);
+        
+        isStepping = false;
+    }
+
+    void PlayFootstepAudio()
+    {
+        if (footSound == null) return;
+
+        // If an array of clips is provided, pick one at random
+        if (footstepClips != null && footstepClips.Length > 0)
+        {
+            AudioClip clip = footstepClips[Random.Range(0, footstepClips.Length)];
+            
+            // Subtle pitch variation prevents repetitive sound fatigue
+            footSound.pitch = Random.Range(0.9f, 1.1f); 
+            footSound.PlayOneShot(clip);
+        }
+        else if (footSound.clip != null)
+        {
+            // Fallback to assigned default clip on AudioSource
+            footSound.pitch = Random.Range(0.9f, 1.1f);
+            footSound.PlayOneShot(footSound.clip);
+        }
     }
 }

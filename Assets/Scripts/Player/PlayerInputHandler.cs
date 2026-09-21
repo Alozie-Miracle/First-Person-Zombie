@@ -9,11 +9,15 @@ public class PlayerInputHandler : MonoBehaviour
     public bool isSprinting;
     public bool isJumping;
     public bool isShooting;
+    public bool isMoving;
 
     // Called automatically by Player Input (Send Messages) when WASD / Left Stick moves
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
+
+
+        isMoving = moveInput.sqrMagnitude > 0.01f;
     }
 
     // Called automatically when Mouse moves or Right Stick is moved
