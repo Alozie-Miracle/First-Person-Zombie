@@ -10,6 +10,7 @@ public class PlayerInputHandler : MonoBehaviour
     public bool isJumping;
     public bool isShooting;
     public bool isMoving;
+    public bool isReloading;
 
     // Called automatically by Player Input (Send Messages) when WASD / Left Stick moves
     public void OnMove(InputValue value)
@@ -43,5 +44,10 @@ public class PlayerInputHandler : MonoBehaviour
     {
         // Note: The default InputSystem_Actions map names the fire action "Attack"
         isShooting = value.isPressed;
+    }
+
+    public void OnReload(InputValue value)
+    {
+        isReloading = value.isPressed;
     }
 }
