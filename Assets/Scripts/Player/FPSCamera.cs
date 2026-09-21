@@ -7,6 +7,8 @@ public class FPSCamera : MonoBehaviour
 
     PlayerInputHandler input;
     float xRotate = 0f;
+    float minAngle = -90f;
+    float maxAngle = 90f;
 
     void Start()
     {
@@ -27,7 +29,7 @@ public class FPSCamera : MonoBehaviour
 
         // Rotate camera vertically (Up/Down) with clamping to prevent flipping
         xRotate -= mouseY;
-        xRotate = Mathf.Clamp(xRotate, -90f, 90f);
+        xRotate = Mathf.Clamp(xRotate, minAngle, maxAngle);
         transform.localRotation = Quaternion.Euler(xRotate, 0f, 0f);
 
         // Rotate player body horizontally (Left/Right)
